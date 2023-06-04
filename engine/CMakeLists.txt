@@ -92,3 +92,42 @@ if(VULL_BUILD_TESTS)
         BYPRODUCTS vull_tests.cmake)
     set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES vull_tests.cmake)
 endif()
+
+if(VULL_BUILD_WAYLAND)
+    # TODO: Extract this into a function.
+    set(_header "${CMAKE_CURRENT_BINARY_DIR}/wayland/xdg-decoration-client.h")
+    set(_source "${CMAKE_CURRENT_BINARY_DIR}/wayland/xdg-decoration.c")
+    set(_schema "${WaylandProtocols_DIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/wayland")
+    add_custom_command(OUTPUT "${_header}"
+            COMMAND "${WaylandScanner_EXECUTABLE}" client-header "${_schema}" "${_header}"
+            DEPENDS "${_schema}"
+            VERBATIM)
+    add_custom_command(OUTPUT "${_source}"
+            COMMAND "${WaylandScanner_EXECUTABLE}" private-code "${_schema}" "${_source}"
+            DEPENDS "${_schema}"
+            VERBATIM)
+    add_library(wl-xdg-decoration "${_source}" "${_header}")
+    target_include_directories(wl-xdg-decoration PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/wayland/")
+
+    set(_header "${CMAKE_CURRENT_BINARY_DIR}/wayland/xdg-shell-client.h")
+    set(_source "${CMAKE_CURRENT_BINARY_DIR}/wayland/xdg-shell.c")
+    set(_schema "${WaylandProtocols_DIR}/stable/xdg-shell/xdg-shell.xml")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/wayland")
+    add_custom_command(OUTPUT "${_header}"
+            COMMAND "${WaylandScanner_EXECUTABLE}" client-header "${_schema}" "${_header}"
+            DEPENDS "${_schema}"
+            VERBATIM)
+    add_custom_command(OUTPUT "${_source}"
+            COMMAND "${WaylandScanner_EXECUTABLE}" private-code "${_schema}" "${_source}"
+            DEPENDS "${_schema}"
+            VERBATIM)
+    add_library(wl-xdg-shell "${_source}" "${_header}")
+    target_include_directories(wl-xdg-shell PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/wayland/")
+
+    unset(_header)
+    unset(_source)
+    unset(_schema)
+
+    target_link_libraries(vull-core PRIVATE wl-xdg-decoration wl-xdg-shell)
+endif()

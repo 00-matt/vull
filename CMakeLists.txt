@@ -46,6 +46,7 @@ cmake_dependent_option(VULL_BUILD_SANDBOX "Build the vull sandbox" ${PROJECT_IS_
     "VULL_BUILD_GRAPHICS;VULL_BUILD_PHYSICS;VULL_BUILD_UI;VULL_BUILD_X11_WINDOW;VULL_BUILD_VPAK" OFF)
 option(VULL_BUILD_TESTS "Build the vull tests" ${PROJECT_IS_TOP_LEVEL})
 option(VULL_ENABLE_COVERAGE "Enable code coverage for testing" OFF)
+option(VULL_BUILD_WAYLAND "Build Wayland support" ON)
 
 if(VULL_ENABLE_COVERAGE)
     find_package(Gcov REQUIRED)
@@ -68,6 +69,12 @@ find_program(GLSLC glslc REQUIRED)
 if(VULL_BUILD_UI)
     find_package(Freetype REQUIRED)
     find_package(harfbuzz REQUIRED)
+endif()
+
+if(VULL_BUILD_WAYLAND)
+    find_package(Wayland REQUIRED COMPONENTS client cursor)
+    find_package(WaylandScanner REQUIRED)
+    find_package(WaylandProtocols REQUIRED)
 endif()
 
 if(VULL_BUILD_X11_WINDOW)
