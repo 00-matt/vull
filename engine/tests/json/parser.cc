@@ -14,23 +14,57 @@
 using namespace vull;
 using namespace vull::test::matchers;
 
-// TODO: This should use proper matchers.
+template <typename ValueT>
+class OfValue {
+    ValueT m_expected;
+
+public:
+    constexpr explicit OfValue(const ValueT &expected) : m_expected(expected) {}
+
+    void describe(vull::test::Message &message) const {
+        message.append_text("a JSON value equal to ");
+        message.append_value(m_expected);
+    }
+    
+    void describe_mismatch(vull::test::Message &message, const auto &actual) const {
+        message.append_text("was ");
+        message.append_value(actual);
+    }
+
+    bool matches(const auto &actual) const {
+        if (!actual.template has<ValueT>()){
+            return false;
+        }
+
+        if constexpr (is_same<ValueT, json::Null>) {
+            return true;
+        } else {
+            // The else after return is required so that the compiler does not generate a call to operator== for
+            // json::Null.
+            // TODO: Just implement operator== for json::Null:/
+            return VULL_ASSUME(actual.template get<ValueT>()) == m_expected;
+        }
+    }
+};
+
+constexpr auto of_value(const auto &expected) {
+    return OfValue(expected);
+}
+
+constexpr auto of_value(nullptr_t) {
+    return OfValue(json::Null{});
+}
 
 TEST_CASE(JsonParser, Null) {
-    auto value = VULL_EXPECT(json::parse("null"));
-    EXPECT_TRUE(value.has<json::Null>());
+    EXPECT_THAT(json::parse("null"), is(success(of_value(nullptr))));
 }
 
 TEST_CASE(JsonParser, True) {
-    auto value = VULL_EXPECT(json::parse("true"));
-    EXPECT_TRUE(value.has<bool>());
-    EXPECT_TRUE(VULL_ASSUME(value.get<bool>()));
+    EXPECT_THAT(json::parse("true"), is(success(of_value(true))));
 }
 
 TEST_CASE(JsonParser, False) {
-    auto value = VULL_EXPECT(json::parse("false"));
-    EXPECT_TRUE(value.has<bool>());
-    EXPECT_FALSE(VULL_ASSUME(value.get<bool>()));
+    EXPECT_THAT(json::parse("false"), is(success(of_value(false))));
 }
 
 TEST_CASE(JsonParser, Integer) {
